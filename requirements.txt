@@ -79,7 +79,7 @@ langgraph==0.4.1
 langgraph-checkpoint==2.0.25
 langgraph-prebuilt==0.1.8
 langgraph-sdk==0.1.66
-langsmith==0.4.27
+langsmith>=0.3,<0.4
 lxml==5.4.0
 MarkupSafe==3.0.2
 marshmallow==3.26.1
@@ -164,4 +164,5 @@ xxhash==3.5.0
 xyzservices==2025.4.0
 yarl==1.20.0
 zstandard==0.23.0
+
 
