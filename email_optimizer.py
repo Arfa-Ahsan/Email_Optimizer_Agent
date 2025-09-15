@@ -4,17 +4,20 @@ from langchain_core.messages import HumanMessage
 from langgraph.func import entrypoint, task
 from dotenv import load_dotenv
 import os
+
 from langchain_groq import ChatGroq
 
+# Helper to get LLM with user API key
+def get_llm(api_key):
+    return ChatGroq(
+        model="moonshotai/kimi-k2-instruct-0905",
+        temperature=0.2,
+        api_key=api_key
+    )
 
-# Load environment variables from .env file
-load_dotenv()
-groq_api_key = os.getenv("GROQ_API_KEY")
-
-# Initialize Gemini model
-llm = ChatGroq(
-    model="moonshotai/kimi-k2-instruct-0905",
-    temperature=0.2)
+# Helper to get evaluator with user LLM
+def get_evaluator(llm):
+    return llm.with_structured_output(Feedback)
 
 # ------------------ Structured Feedback Schema ------------------
 class Feedback(BaseModel):
@@ -29,12 +32,12 @@ class Feedback(BaseModel):
     subject_line_suggestion: str = Field(..., description="Suggested subject line for the email.")
     conciseness_score: float = Field(..., description="Score (0–10) for how concise and to-the-point the email is.")
 
-# Evaluator setup
-evaluator = llm.with_structured_output(Feedback)
+
 
 # ------------------ Email Generator ------------------
 @task
-def llm_email_generator(topic: str, feedback: Feedback = None):
+def llm_email_generator(topic: str, feedback: Feedback = None, api_key: str = None):
+    llm = get_llm(api_key)
     if feedback:
         prompt = f"""
         Write a professional email on the topic '{topic}'.
@@ -70,7 +73,9 @@ def llm_email_generator(topic: str, feedback: Feedback = None):
 
 # ------------------ Email Evaluator ------------------
 @task
-def llm_email_evaluator(email: str):
+def llm_email_evaluator(email: str, api_key: str = None):
+    llm = get_llm(api_key)
+    evaluator = get_evaluator(llm)
     prompt = f"""
     Please analyze the following email and provide structured feedback for each of the following aspects:
 
@@ -90,14 +95,14 @@ def llm_email_evaluator(email: str):
     """
 
     feedback = evaluator.invoke(prompt)
-
-
     return {"feedback": feedback}
 
 # ------------------ Optimizer Workflow ------------------
 @entrypoint()
-def optimizer_workflow(topic: str):
-    # Only proceed if the topic is email-related
+def optimizer_workflow(inputs):
+    topic = inputs["topic"]
+    api_key = inputs["api_key"]
+
     def is_email_prompt(text):
         if not text or len(text.strip()) < 10:
             return False
@@ -122,12 +127,12 @@ def optimizer_workflow(topic: str):
     iteration = 0
 
     while iteration < max_iterations:
-        email = llm_email_generator(topic, feedback).result()
+        email = llm_email_generator(topic, feedback, api_key).result()
 
         if initial_email is None:
             initial_email = email["email"]
 
-        feedback = llm_email_evaluator(email["email"]).result()
+        feedback = llm_email_evaluator(email["email"], api_key).result()
 
         if initial_feedback is None:
             initial_feedback = feedback["feedback"]

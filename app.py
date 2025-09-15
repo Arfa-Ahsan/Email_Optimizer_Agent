@@ -8,8 +8,8 @@ st.set_page_config(page_title="Email Optimizer", layout="wide")
 st.markdown("<h1 style='text-align: center;'>Email Content Optimizer</h1>", unsafe_allow_html=True)
 
 st.sidebar.markdown("<h2 style='text-align: center;'>Feedback</h2>", unsafe_allow_html=True)
-google_api_key = st.text_input("Enter your GROQ API Key:", type="password")
-if not google_api_key:
+groq_api_key = st.text_input("Enter your GROQ API Key:", type="password")
+if not groq_api_key:
     st.sidebar.warning("Please enter your GROQ API Key to continue.")
     st.stop()
 
@@ -19,7 +19,7 @@ topic = st.text_input("Describe what the email should be about:", placeholder="e
 if st.button("Optimize Email") and topic:
     with st.spinner("Generating and evaluating email..."):
         try:
-            result = optimizer_workflow.invoke(topic)
+            result = optimizer_workflow.invoke({"topic": topic, "api_key": groq_api_key})
 
             if "error" in result:
                 st.error(result["error"])
