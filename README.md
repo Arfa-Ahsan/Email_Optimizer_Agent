@@ -16,8 +16,6 @@ Writing effective emails is challenging—users often struggle with tone, clarit
 - Suggestions for subject lines and actionable content
 - User-friendly Streamlit interface
 
-![Uploading image.png…]()
-
 
 ## Technologies Used
 
